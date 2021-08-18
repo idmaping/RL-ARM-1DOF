@@ -9,8 +9,8 @@ import cv2
 class QLEARNING:
     def __init__(self):
         self.MAX_EPISODE = 50000
-        self.MAX_STEP = 300
-        self.SHOW_EVERY_EPISODE = 5000
+        self.MAX_STEP = 400
+        self.SHOW_EVERY_EPISODE = 500
         self.EPSILON_DECAY = 0.9998
         self.EPSILON = 0.9
         self.LR = 0.1
@@ -38,6 +38,7 @@ class QLEARNING:
         self.init()
         #print(self.q_table[self.env.getState()][0])
         episode_rewards = []
+        epsilons = []
         for episode in range(self.MAX_EPISODE):
             
             episode_reward = 0
@@ -60,7 +61,7 @@ class QLEARNING:
                 current_q = self.q_table[state][action]
                 reward = self.env.getReward()
 
-                if reward >0:
+                if reward == self.env.REWARD_GOAL:
                     new_q = reward
                 else:
                     new_q = (1 - self.LR) * current_q + self.LR * (reward + self.DISCOUNT * max_future_q)
@@ -68,23 +69,47 @@ class QLEARNING:
 
                 episode_reward += reward
 
+                ## SHOW ANIMATION IN EVERY X EPISODE MECHANISM
                 if self.SHOW:
                     #print("EPISODE : ",episode,"    R : ",episode_reward)
                     self.env.show()
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-
+                
+                ## BREAK IF REACH GOAL
+                if reward == self.env.REWARD_GOAL: 
+                    break
             
             episode_rewards.append(episode_reward)
+            epsilons.append(self.EPSILON)
             self.EPSILON *= self.EPSILON_DECAY
 
             print("EPISODE : ",episode,"    R : ",episode_reward)
         
         moving_avg = np.convolve(episode_rewards, np.ones((self.SHOW_EVERY_EPISODE,))/self.SHOW_EVERY_EPISODE, mode='valid')
-        plt.plot([i for i in range(len(moving_avg))], moving_avg)
-        plt.ylabel(f"Reward {self.SHOW_EVERY_EPISODE}ma")
-        plt.xlabel("episode #")
+        
+        
+        #plt.plot([i for i in range(len(moving_avg))], moving_avg)
+        #plt.ylabel(f"Reward {self.SHOW_EVERY_EPISODE}ma")
+        #plt.xlabel("episode #")
+        #plt.show()
+
+        f, axes = plt.subplots()
+        axes.plot([i for i in range(len(moving_avg))], 
+                     moving_avg,
+                     color='blue',label='REWARD')
+        axes.set_ylabel('REWARD', color='tab:blue')
+        ax2 = axes.twinx()      
+        ax2.plot([i for i in range(len(epsilons))], 
+                     epsilons,
+                     color='red',label='EPSILON')
+        ax2.set_ylabel('EPSILON', color='tab:red')
+        axes.set_xlabel("EPISODE")
         plt.show()
+
+
+        with open(f"qtable-{self.env.ENV_HEIGHT}x{self.env.ENV_WIDTH}.pickle", "wb") as f:
+            pickle.dump(self.q_table, f)
 
 
 
