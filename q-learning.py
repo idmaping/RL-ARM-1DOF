@@ -8,20 +8,20 @@ import cv2
 
 class QLEARNING:
     def __init__(self):
-        self.MAX_EPISODE = 50000
+        self.MAX_EPISODE = 200000
         self.MAX_STEP = 400
-        self.SHOW_EVERY_EPISODE = 500
+        self.SHOW_EVERY_EPISODE = 10000
         self.EPSILON_DECAY = 0.9998
         self.EPSILON = 0.9
         self.LR = 0.1
         self.DISCOUNT = 0.95
-        self.start_q_table = None
+        #self.start_q_table = None
         self.env = ENVIRONMENT()
         self.q_table = {}
         self.SHOW = False
 
-    def init(self):
-        if self.start_q_table is None:
+    def init(self,start_q_table = None):
+        if start_q_table is None:
             print("NO Q-TABLE IS LOADED")
             print("CREATING Q-TABLE")
             for i in range(0,self.env.ENV_WIDTH+1):
@@ -31,21 +31,43 @@ class QLEARNING:
             print(self.q_table[(0,0,0)][0])
             print("DONE CREATING Q-TABLE")
         else:
-            with open(self.start_q_table, "rb") as f:
+            with open(start_q_table, "rb") as f:
                 self.q_table = pickle.load(f)
     
+    def test(self,weight = ''):
+        self.init(start_q_table=weight)
+        while(1):
+            self.env.reset()
+            for i in range(100):
+                state = self.env.getState()
+                action = np.argmax(self.q_table[state])
+                self.env.step(action)
+                reward = self.env.getReward()
+                self.env.show()
+                print(state,action)
+                if cv2.waitKey(100) & 0xFF == ord('q'):
+                    break
+                if reward == self.env.REWARD_GOAL: 
+                    break
+                
+        
+        
+
+
     def learn(self):
         self.init()
         #print(self.q_table[self.env.getState()][0])
         episode_rewards = []
         epsilons = []
-        for episode in range(self.MAX_EPISODE):
+        for episode in range(self.MAX_EPISODE+1):
             
             episode_reward = 0
             self.env.reset()
 
             if episode % self.SHOW_EVERY_EPISODE == 0 and episode>0 :
-                self.SHOW = True
+                #self.SHOW = True
+                with open(f"qtable-{self.env.ENV_HEIGHT}x{self.env.ENV_WIDTH}ep{episode}.pickle", "wb") as f:
+                    pickle.dump(self.q_table, f)
             else:
                 self.SHOW = False
 
@@ -108,11 +130,12 @@ class QLEARNING:
         plt.show()
 
 
-        with open(f"qtable-{self.env.ENV_HEIGHT}x{self.env.ENV_WIDTH}.pickle", "wb") as f:
+        with open(f"qtable-{self.env.ENV_HEIGHT}x{self.env.ENV_WIDTH}ep{episode}.pickle", "wb") as f:
             pickle.dump(self.q_table, f)
 
 
 
 if __name__ == '__main__':
     ql=QLEARNING()
-    ql.learn()
+    #ql.learn()
+    ql.test(weight='qtable-20x20ep200000.pickle')

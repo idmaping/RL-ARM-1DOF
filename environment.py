@@ -38,7 +38,7 @@ class ENVIRONMENT:
         if self.TGT_THETA <0:
             self.TGT_THETA = 360 + self.TGT_THETA
         
-        reward = -1
+        reward = -10
         angle_thresh = 5
         if self.POS_THETA-angle_thresh <= self.TGT_THETA <= self.POS_THETA+angle_thresh:
             reward = self.REWARD_GOAL
@@ -51,7 +51,7 @@ class ENVIRONMENT:
     def reset(self):
         self.TGT_X = np.random.randint(self.ENV_WIDTH)
         self.TGT_Y = np.random.randint(self.ENV_HEIGHT)
-        self.POS_THETA = np.random.randint(359)
+        self.POS_THETA = np.random.randint(71)*5
 
 
     def step(self,action):
@@ -71,12 +71,19 @@ class ENVIRONMENT:
         
 
     def show(self):
-        self.POS_X = (self.ENV_WIDTH/2) + self.POS_RHO * np.cos(np.radians(self.POS_THETA))
-        self.POS_Y = (self.ENV_HEIGHT/2) + self.POS_RHO * -np.sin(np.radians(self.POS_THETA))
+        multi = 10
         temp = self.ENV_BACKGROUND.copy()
-        temp = cv2.line(temp, (int(self.ENV_WIDTH/2),int(self.ENV_HEIGHT/2)), (int(self.POS_X),int(self.POS_Y)), (0,255,0), 1)
-        temp = cv2.circle(temp, (int(self.TGT_X),int(self.TGT_Y)), 0, (255,255,255), 1)
-        temp = cv2.resize(temp, ((200,200)), interpolation = cv2.INTER_AREA)
+        
+        temp = cv2.resize(temp, ((temp.shape[0]*multi,temp.shape[1]*multi)), interpolation = cv2.INTER_AREA)
+
+        POS_X = (self.ENV_WIDTH/2) + self.POS_RHO * np.cos(np.radians(self.POS_THETA))
+        POS_Y = (self.ENV_HEIGHT/2) + self.POS_RHO * -np.sin(np.radians(self.POS_THETA))
+        
+        temp = cv2.line(temp, (int(self.ENV_WIDTH/2)*multi,int(self.ENV_HEIGHT/2)*multi), (int(POS_X)*multi,int(POS_Y)*multi), (0,255,0), 2)
+        temp = cv2.circle(temp, (int(self.TGT_X)*multi,int(self.TGT_Y)*multi), 3, (255,255,255), 3)
+        
+        temp = cv2.resize(temp, ((500,500)), interpolation = cv2.INTER_AREA)
+        
         cv2.imshow('ENVIRONMENT',temp)
         
         #cv2.waitKey(0)
